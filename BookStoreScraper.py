@@ -1,3 +1,4 @@
+from pyclbr import Class
 from pymongo import MongoClient
 import requests
 from bs4 import BeautifulSoup
@@ -6,7 +7,15 @@ from dotenv import load_dotenv
 import os
 
 
-def getMongoCollection(uri, db, collection):
+def getMongoCollection(uri: str, db: str, collection: str) -> Class:
+    """
+    Returns a MongoDB collection object for a give Database and Collection.\n
+    Keyword Arguments:\n    
+    uri -- MongoDB URI Connection String \n
+    db -- Name of the MongoDB Database (type) \n
+    collection -- Name of the MongoDB Collection
+    """
+
     client = MongoClient(uri)
     dbase = client[db]
     collObj = dbase[collection]
@@ -14,7 +23,13 @@ def getMongoCollection(uri, db, collection):
     return collObj
 
 
-def getGenresAndURLs(url):
+def getGenresAndURLs(url: str) -> list:
+    """
+    Returns a list of tuples (Genre, URL) based on the provided url.\n
+    Keyword Arguments:\n
+    url -- the home page of books.toscrape.com
+    """
+    
     resp = requests.get(url)
     soup = BeautifulSoup(resp.content, "html.parser")
     sidebar = soup.find('div', {'class': 'side_categories'}).find('ul').find('ul')
@@ -26,7 +41,15 @@ def getGenresAndURLs(url):
     return urlAndGenre
 
 
-def getBookDocuments(genre, url):
+def getBookDocuments(genre: str, url: str) -> list:
+    """
+    Returns a list of dictionaries.\n
+    Each dictionary contains the scraped data for one book in the bookstore.\n
+    Keyword Arguments:\n
+    genre -- genre of the books under the provided url\n
+    url -- url related to a certain genre of books
+    """
+    
     resp = requests.get(url)
     soup = BeautifulSoup(resp.content, "html.parser")
     listOfJSON = []
