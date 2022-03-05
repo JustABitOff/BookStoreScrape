@@ -1,7 +1,18 @@
+from pymongo import MongoClient
 import requests
 from bs4 import BeautifulSoup
 import json
 from datetime import datetime
+
+
+def getMongoCollection(uri, db, collection):
+    client = MongoClient(uri)
+    dbase = client[db]
+    collObj = dbase[collection]
+    print(collObj.find_one())
+
+    return collObj
+
 
 def getGenresAndURLs(url):
     resp = requests.get(url)
@@ -14,10 +25,11 @@ def getGenresAndURLs(url):
 
     return urlAndGenre
 
-def getBookDocument(genre, url):
+
+def getBookDocuments(genre, url):
     resp = requests.get(url)
     soup = BeautifulSoup(resp.content, "html.parser")
-    listOfJSON = [] ##temporary 
+    listOfJSON = []
 
     for section in soup.find('ol').find_all('li'):
         for a in section.find('h3'):
@@ -56,11 +68,16 @@ def getBookDocument(genre, url):
 
 def main():
     homePageURL = 'https://books.toscrape.com/'
-    genresURLsTuples = getGenresAndURLs(homePageURL)
+    mongoURI = 'mongodb+srv://cameronjcyr:Kotaleo1216!@prodcluster.85gfh.mongodb.net/'
+    db = 'BookStore'
+    collection = 'Books'
     allBooks = []
 
+    genresURLsTuples = getGenresAndURLs(homePageURL)
+    booksColl = getMongoCollection(mongoURI, db, collection)
+
     for i in genresURLsTuples:
-        allBooks.append((i[0], getBookDocument(i[0], i[1])))
+        allBooks.append((i[0], getBookDocuments(i[0], i[1])))
         
 
 if __name__ == "__main__":
