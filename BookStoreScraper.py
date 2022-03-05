@@ -1,15 +1,15 @@
 from pymongo import MongoClient
 import requests
 from bs4 import BeautifulSoup
-import json
 from datetime import datetime
+from dotenv import load_dotenv
+import os
 
 
 def getMongoCollection(uri, db, collection):
     client = MongoClient(uri)
     dbase = client[db]
     collObj = dbase[collection]
-    print(collObj.find_one())
 
     return collObj
 
@@ -51,34 +51,44 @@ def getBookDocuments(genre, url):
         
         prodInStock = prodPriceClass.find('p', {'class': 'instock availability'}).contents[2].strip()
 
-        bookJson = json.dumps(
-            {
-                'Title': bookName,
-                'Genre': genre,
-                'Rating': rating,
-                'Price (GBP)': bookPrice,
-                'In-Stock Status': prodInStock,
-                'Scrape Date': datetime.now().isoformat()
-            }
-        )
+        bookJson = {
+            'Title': bookName,
+            'Genre': genre,
+            'Rating': rating,
+            'Price (GBP)': bookPrice,
+            'In-Stock Status': prodInStock,
+            'Scrape Date': datetime.now().isoformat()
+        }
 
         listOfJSON.append(bookJson)
     
     return listOfJSON
 
+
 def main():
+    load_dotenv()
+    MONGO_USERNAME = os.getenv("MONGO_USERNAME")
+    MONGO_PASSWORD = os.getenv("MONGO_PASSWORD")
+    MONGO_PORT = os.getenv("MONGO_PORT")
+
     homePageURL = 'https://books.toscrape.com/'
-    mongoURI = 'mongodb+srv://cameronjcyr:Kotaleo1216!@prodcluster.85gfh.mongodb.net/'
+    mongoURI = 'mongodb+srv://{}:{}@prodcluster.{}.mongodb.net/'.format(MONGO_USERNAME, MONGO_PASSWORD, MONGO_PORT)
     db = 'BookStore'
     collection = 'Books'
-    allBooks = []
 
     genresURLsTuples = getGenresAndURLs(homePageURL)
     booksColl = getMongoCollection(mongoURI, db, collection)
 
-    for i in genresURLsTuples:
-        allBooks.append((i[0], getBookDocuments(i[0], i[1])))
+    for tup in genresURLsTuples:
+        documents = getBookDocuments(tup[0], tup[1])
         
+        for doc in documents:
+            booksColl.replace_one(
+                {'Title': doc['Title']},
+                doc,
+                upsert = True
+            )
+
 
 if __name__ == "__main__":
     main()
