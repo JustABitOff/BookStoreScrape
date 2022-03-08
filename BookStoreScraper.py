@@ -30,6 +30,7 @@ def getGenresAndURLs(url: str) -> list:
     url -- the home page of books.toscrape.com
     """
     
+
     resp = requests.get(url)
     soup = BeautifulSoup(resp.content, "html.parser")
     sidebar = soup.find('div', {'class': 'side_categories'}).find('ul').find('ul')
